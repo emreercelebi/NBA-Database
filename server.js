@@ -61,8 +61,16 @@ app.get('/games', function(req, res, next) {
       next(err);
       return;
     }
-    context.rows = rows;
-    res.send(JSON.stringify(context));
+    context.rowsG = rows;
+    pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams", 
+    function(err, rows) {
+      if (err) {
+        next(err);
+        return;
+      }
+      context.rowsT = rows;
+      res.send(JSON.stringify(context));
+    });
   });
 });
 
@@ -170,6 +178,35 @@ app.post("/players", function(req, res, next) {
     });
   });
 }); 
+
+app.post("/games", function(req, res, next) {
+
+  pool.query("INSERT INTO Games (Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore) VALUES (?)", [[req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore]], function(err, result) {
+    if (err) {
+      console.log(err.stack);
+      next(err);
+      return;
+    }
+    var context = {};
+    pool.query("SELECT Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore FROM Games", 
+    function(err, rows) {
+      if (err) {
+        next(err);
+        return;
+      }
+      context.rowsG = rows;
+      pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams", 
+      function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsT = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
+  });
+});
 
 app.use(function(req,res){
   res.type('text/plain');

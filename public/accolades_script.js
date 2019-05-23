@@ -15,13 +15,30 @@ function buildTable(response) {
         }
       }
     }
+
+    let updateTd = document.createElement("td");
+    let updateButton = document.createElement("button");
+    updateButton.innerHTML = "Update";
+    updateButton.id = "update" + id;
+    updateTd.appendChild(updateButton);
+
+    let deleteTd = document.createElement("td");
+    let deleteButton = document.createElement("button");
+    deleteButton.innerHTML = "Delete";
+    deleteButton.id = "delete" + id;
+    deleteTd.appendChild(deleteButton);
+
+    document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
+    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);
   }
+
+  
 }
 
 function bindButtons() {
   document.getElementById("addAcc").addEventListener("click", function(event) {
     var req = new XMLHttpRequest()
-    var url = "http://flip2.engr.oregonstate.edu:3742/accolades";
+    var url = "http://localhost:3742/accolades";
     var payload = {};
 
     payload.name = document.getElementById("accName").value;
@@ -51,7 +68,7 @@ function bindButtons() {
 
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://flip2.engr.oregonstate.edu:3742/accolades';
+  var url = 'http://localhost:3742/accolades';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {

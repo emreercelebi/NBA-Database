@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", bindButtons);
 
 function buildTable(response) {
   for (const [i, rows] of response.rows.entries()) {
-    let id = rows[0];
+    let id = rows["id"];
     let tr = document.createElement("tr");
     document.getElementsByTagName("tbody")[0].appendChild(tr);
     for (let prop in rows) {
@@ -15,12 +15,29 @@ function buildTable(response) {
         }
       }
     }
+
+    let updateTd = document.createElement("td");
+    let updateButton = document.createElement("button");
+    updateButton.innerHTML = "Update";
+    updateButton.id = "update" + id;
+    updateTd.appendChild(updateButton);
+
+    let deleteTd = document.createElement("td");
+    let deleteButton = document.createElement("button");
+    deleteButton.innerHTML = "Delete";
+    deleteButton.id = "delete" + id;
+    deleteTd.appendChild(deleteButton);
+
+    document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
+    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);   
+
+
   }
 }
 
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://flip2.engr.oregonstate.edu:3742/teams';
+  var url = 'http://localhost:3742/teams';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {
@@ -42,7 +59,7 @@ function initialize() {
 function bindButtons() {
   document.getElementById("addTeam").addEventListener("click", function(event) {
     var req = new XMLHttpRequest();
-    var url = "http://flip2.engr.oregonstate.edu:3742/teams";
+    var url = "http://localhost:3742/teams";
     var payload = {};
     payload.location = document.getElementById("location").value;
     payload.name = document.getElementById("teamName").value;
