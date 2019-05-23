@@ -188,7 +188,7 @@ app.post("/games", function(req, res, next) {
       return;
     }
     var context = {};
-    pool.query("SELECT Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore FROM Games", 
+    pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%m-%d-%y'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id", 
     function(err, rows) {
       if (err) {
         next(err);
