@@ -109,7 +109,21 @@ app.get('/winners', function(req, res, next) {
       return;
     }
     context.rows = rows;
-    res.send(JSON.stringify(context));
+    pool.query("SELECT id, Name FROM Accolades", function(err, rows) {
+      if (err) {
+        next(err);
+        return;
+      }
+      context.rowsA = rows;
+      pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsP = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
   });
 });
 
@@ -181,7 +195,9 @@ app.post("/players", function(req, res, next) {
 
 app.post("/games", function(req, res, next) {
 
-  pool.query("INSERT INTO Games (Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore) VALUES (?)", [[req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore]], function(err, result) {
+  pool.query("INSERT INTO Games (Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore) VALUES (?)", 
+  [[req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore]], 
+  function(err, result) {
     if (err) {
       console.log(err.stack);
       next(err);
@@ -203,6 +219,42 @@ app.post("/games", function(req, res, next) {
         }
         context.rowsT = rows;
         res.send(JSON.stringify(context));
+      });
+    });
+  });
+});
+
+app.post('/winners', function(req, res, next) {
+  pool.query("INSERT INTO AccoladeWinners (AccId, PlayerId) VALUES (?)", 
+  [[req.body.accolade, req.body.player]], 
+  function(err, result) {
+    if (err) {
+      console.log(err.stack);
+      next(err);
+      return;
+    }
+    var context = {};
+    pool.query("SELECT aw.AccId, aw.PlayerId, a.Name, CONCAT(p.FirstName, ' ', p.LastName) AS PlayerName FROM AccoladeWinners aw INNER JOIN Accolades a ON aw.AccId = a.id INNER JOIN Players p ON aw.PlayerId = p.id", 
+    function(err, rows) {
+      if (err) {
+        next(err);
+        return;
+      }
+      context.rows = rows;
+      pool.query("SELECT id, Name FROM Accolades", function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsA = rows;
+        pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", function(err, rows) {
+          if (err) {
+            next(err);
+            return;
+          }
+          context.rowsP = rows;
+          res.send(JSON.stringify(context));
+        });
       });
     });
   });
