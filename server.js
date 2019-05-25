@@ -75,7 +75,7 @@ app.get('/games', function(req, res, next) {
 });
 
 app.get('/appearances', function(req, res, next) {
-  pool.query("SELECT gp.GameId, gp.PlayerId, DATE_FORMAT(g.Date, '%m-%d-%y') AS Game, CONCAT(p.FirstName, ' ', p.LastName) AS Player, gp.PlayerPoints FROM GamePlayer gp INNER JOIN Games g ON gp.GameId = g.id INNER JOIN Players p ON gp.PlayerId = p.id",
+  pool.query("SELECT gp.GameId, gp.PlayerId, CONCAT(DATE_FORMAT(g.Date, '%m-%d-%y'), ' ', t.Name, ' vs. ', te.Name) AS Game, CONCAT(p.FirstName, ' ', p.LastName) AS Player, gp.PlayerPoints FROM GamePlayer gp INNER JOIN Games g ON gp.GameId = g.id INNER JOIN Players p ON gp.PlayerId = p.id INNER JOIN Teams t ON g.AwayTeam = t.id INNER JOIN Teams te ON g.HomeTeam = te.id",
   function(err, rows) {
     var context = {}
     if(err) {
@@ -83,7 +83,23 @@ app.get('/appearances', function(req, res, next) {
       return;
     }
     context.rows = rows;
-    res.send(JSON.stringify(context));
+    pool.query("SELECT g.id, CONCAT(DATE_FORMAT(g.Date, '%m-%d-%y'), ' ', ta.Name, ' vs. ', th.Name) AS Game FROM Games g INNER JOIN Teams ta ON g.AwayTeam = ta.id INNER JOIN Teams th ON g.HomeTeam = th.id;",
+    function(err, rows) {
+      if (err) {
+        next(err);
+        return;
+      }
+      context.rowsG = rows;
+      pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", 
+      function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsP = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
   });
 });
 
@@ -258,6 +274,46 @@ app.post('/winners', function(req, res, next) {
       });
     });
   });
+});
+
+app.post('/appearances', function(req, res, next) {
+  pool.query("INSERT INTO GamePlayer (GameId, PlayerId, PlayerPoints) VALUES (?)", 
+  [[req.body.game, req.body.player, req.body.points]], 
+  function(err, result) {
+    if (err) {
+      console.log(err.stack);
+      next(err);
+      return;
+    }
+    var context = {};
+    pool.query("SELECT gp.GameId, gp.PlayerId, CONCAT(DATE_FORMAT(g.Date, '%m-%d-%y'), ' ', t.Name, ' vs. ', te.Name) AS Game, CONCAT(p.FirstName, ' ', p.LastName) AS Player, gp.PlayerPoints FROM GamePlayer gp INNER JOIN Games g ON gp.GameId = g.id INNER JOIN Players p ON gp.PlayerId = p.id INNER JOIN Teams t ON g.AwayTeam = t.id INNER JOIN Teams te ON g.HomeTeam = te.id",
+    function(err, rows) {
+      if(err) {
+        next(err);
+        return;
+      }
+      context.rows = rows;
+      pool.query("SELECT CONCAT(DATE_FORMAT(g.Date, '%m-%d-%y'), ' ', ta.Name, ' vs. ', th.Name) AS Game FROM Games g INNER JOIN Teams ta ON g.AwayTeam = ta.id INNER JOIN Teams th ON g.HomeTeam = th.id;",
+      function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsG = rows;
+        pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", 
+        function(err, rows) {
+          if (err) {
+            next(err);
+            return;
+          }
+          context.rowsP = rows;
+          res.send(JSON.stringify(context));
+        });
+      });
+    });
+    
+  });
+
 });
 
 app.use(function(req,res){
