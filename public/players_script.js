@@ -1,3 +1,4 @@
+var url = "http://localhost:3742/players";
 document.addEventListener("DOMContentLoaded", initialize);
 document.addEventListener("DOMContentLoaded", bindButtons);
 
@@ -10,11 +11,16 @@ function buildTable(response) {
       if (rowsP.hasOwnProperty(prop)) {
         if (prop !== "id") {
           let td = document.createElement("td");
+          let input = document.createElement("input");
+          input.type = "text";
           if (rowsP[prop] == null) {
-            td.innerText = "None";
+            input.value = "None";
           } else {
-            td.innerText = `${rowsP[prop]}`;
+            input.value = `${rowsP[prop]}`;
           }
+          input.readOnly = true;
+          input.style.borderColor = "transparent";
+          td.appendChild(input);
           document.getElementsByTagName("tr")[i+1].appendChild(td);
         }
       }
@@ -22,21 +28,24 @@ function buildTable(response) {
 
     let updateTd = document.createElement("td");
     let updateButton = document.createElement("button");
+    updateButton.name = "Update";
     updateButton.innerHTML = "Update";
-    updateButton.id = "update" + id;
+    updateButton.value = id;
+    updateButton.className = "btn btn-success btn-sm";
     updateTd.appendChild(updateButton);
 
     let deleteTd = document.createElement("td");
     let deleteButton = document.createElement("button");
+    deleteButton.name = "Delete";
     deleteButton.innerHTML = "Delete";
-    deleteButton.id = "delete" + id;
+    deleteButton.value = id;
+    deleteButton.className = "btn btn-danger btn-sm";
     deleteTd.appendChild(deleteButton);
 
     document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
     document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);
   }
-
-   
+   bindUpdateBtns();
 }
 
 function buildTeams(response) {
@@ -49,9 +58,52 @@ function buildTeams(response) {
   }
 }
 
+function buildUpdatePos(event) {
+  let row = event.parentElement.parentElement;
+  let curPos = row.childNodes[2];
+  let curPosVal = curPos.firstChild.value;
+  let positions = document.getElementById("position").options;
+  let posSelect = document.createElement("select");
+  posSelect.className = "custom-select mb-2 mr-sm-2";
+  for (let pos of positions) {
+    if (pos.value != "Position...") {
+      let op = document.createElement("option");
+      op.value = pos.value;
+      op.innerText = pos.value;
+      if (op.value == curPosVal) {
+        op.selected = true;
+      }
+      posSelect.appendChild(op);
+    }
+  }
+  curPos.removeChild(curPos.firstChild);
+  curPos.appendChild(posSelect);
+}
+
+function buildUpdateTeams(event) {
+  let row = event.parentElement.parentElement;
+  let curTeam = row.childNodes[3];
+  let curTeamVal = curTeam.firstChild.value;
+  let teams = document.getElementById("team").options;
+  let teamSelect = document.createElement("select");
+  teamSelect.className = "custom-select mb-2 mr-sm-2";
+  for (let team of teams) {
+    if (team.value != "Team...") {
+      let op = document.createElement("option");
+      op.value = team.value;
+      op.innerText = team.innerText;
+      if (op.innerText == curTeamVal) {
+        op.selected = true;
+      }
+      teamSelect.appendChild(op);
+    }
+  }
+  curTeam.removeChild(curTeam.firstChild);
+  curTeam.appendChild(teamSelect);
+}
+
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://localhost:3742/players';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {
@@ -74,16 +126,16 @@ function initialize() {
 function bindButtons() {
   document.getElementById("addPlayer").addEventListener("click", function(event) {
     var req = new XMLHttpRequest();
-    var url = "http://localhost:3742/players";
     var payload = {};
+    payload.type = "New";
     payload.firstName = document.getElementById("firstName").value;
     payload.lastName = document.getElementById("lastName").value;
     payload.position = document.getElementById("position").value;
     payload.team = document.getElementById("team").value;
-    if (payload.team == "Team...") {
+    if (payload.team == "None") {
       payload.team = null;
     }
-    if (payload.firstName != "" && payload.lastName != "" && position != "") {
+    if (payload.firstName != "" && payload.lastName != "" && position != "" && payload.team != "Team...") {
       req.open("POST", url, true);
       req.setRequestHeader("Content-Type", "application/json");
       req.addEventListener("load", function() {
@@ -94,11 +146,10 @@ function bindButtons() {
           }
           document.getElementById("firstName").value = "";
           document.getElementById("lastName").value = "";
-          document.getElementById("position").value = "";
-          document.getElementById("team").value = "";
+          document.getElementById("position").value = "Position...";
+          document.getElementById("team").value = "Team...";
           var response = JSON.parse(req.responseText);
           buildTable(response);
-          buildTeams(response);
         } else {
           console.log("Error in network request: " + req.statusText);
         }
@@ -110,4 +161,59 @@ function bindButtons() {
       event.preventDefault();
     }
   });
+}
+
+function bindUpdateBtns() {
+  let updateBtns = document.querySelectorAll("[name=Update]");
+  for (let i = 0; i < updateBtns.length; i++) {
+    updateBtns[i].addEventListener("click", function(event) {
+      let fname = this.parentElement.parentElement.childNodes[0].firstChild;
+      let lname = this.parentElement.parentElement.childNodes[1].firstChild;
+      let pos = this.parentElement.parentElement.childNodes[2].firstChild;
+      let team = this.parentElement.parentElement.childNodes[3].firstChild;
+      if (fname.hasAttribute("readOnly")) {     
+        fname.removeAttribute("readOnly");
+        fname.className = "form-control mb-2 mr-sm-2";
+        fname.style.border = "inherit";
+        lname.removeAttribute("readOnly");
+        lname.className = "form-control mb-2 mr-sm-2";
+        lname.style.border = "inherit";
+        buildUpdatePos(this);
+        buildUpdateTeams(this);
+      } else {
+        var req = new XMLHttpRequest();
+        var payload = {};
+        payload.type = "Update"
+        payload.firstName = fname.value;
+        payload.lastName = lname.value;
+        payload.position = pos.value;
+        payload.team = team.value;
+        payload.id = this.value;
+        if (payload.team == "None") {
+          payload.team = null;
+        }
+        if (payload.firstName != "" && payload.lastName != "" && position != "" && payload.team != "") {
+          req.open("POST", url, true);
+          req.setRequestHeader("Content-Type", "application/json");
+          req.addEventListener("load", function() {
+            if (req.status >= 200 && req.status < 400) {
+              var tbody = document.getElementsByTagName("tbody")[0];
+              while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+              }
+              var response = JSON.parse(req.responseText);
+              buildTable(response);
+            } else {
+              console.log("Error in network request: " + req.statusText);
+            }
+          });
+          req.send(JSON.stringify(payload)); 
+          event.preventDefault();
+        } else {
+          alert("Please enter the required fields");
+          event.preventDefault();
+        }
+      }
+    });
+  }
 }

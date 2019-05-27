@@ -1,3 +1,4 @@
+var url = "http://localhost:3742/teams";
 document.addEventListener("DOMContentLoaded", initialize);
 document.addEventListener("DOMContentLoaded", bindButtons);
 
@@ -10,7 +11,12 @@ function buildTable(response) {
       if (rows.hasOwnProperty(prop)) {
         if (prop !== "id") {
           let td = document.createElement("td");
-          td.innerText = `${rows[prop]}`;
+          let input = document.createElement("input");
+          input.type = "text";
+          input.value = `${rows[prop]}`;
+          input.readOnly = true;
+          input.style.borderColor = "transparent";
+          td.appendChild(input);
           document.getElementsByTagName("tr")[i+1].appendChild(td);
         }
       }
@@ -18,26 +24,28 @@ function buildTable(response) {
 
     let updateTd = document.createElement("td");
     let updateButton = document.createElement("button");
+    updateButton.name = "Update";
     updateButton.innerHTML = "Update";
-    updateButton.id = "update" + id;
+    updateButton.value = id;
+    updateButton.className = "btn btn-success btn-sm";
     updateTd.appendChild(updateButton);
 
     let deleteTd = document.createElement("td");
     let deleteButton = document.createElement("button");
+    deleteButton.name = "Delete";
     deleteButton.innerHTML = "Delete";
-    deleteButton.id = "delete" + id;
+    deleteButton.value = id;
+    deleteButton.className = "btn btn-danger btn-sm";
     deleteTd.appendChild(deleteButton);
 
     document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
     document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);   
-
-
   }
+  bindUpdateBtns();
 }
 
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://localhost:3742/teams';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {
@@ -59,27 +67,78 @@ function initialize() {
 function bindButtons() {
   document.getElementById("addTeam").addEventListener("click", function(event) {
     var req = new XMLHttpRequest();
-    var url = "http://localhost:3742/teams";
     var payload = {};
+    payload.type = "New";
     payload.location = document.getElementById("location").value;
     payload.name = document.getElementById("teamName").value;
-    req.open("POST", url, true);
-    req.setRequestHeader("Content-Type", "application/json");
-    req.addEventListener("load", function() {
-      if (req.status >= 200 && req.status < 400) {
-        var tbody = document.getElementsByTagName("tbody")[0];
-        while (tbody.firstChild) {
-          tbody.removeChild(tbody.firstChild);
+    if (payload.location != "" && payload.name != "") {
+      req.open("POST", url, true);
+      req.setRequestHeader("Content-Type", "application/json");
+      req.addEventListener("load", function() {
+        if (req.status >= 200 && req.status < 400) {
+          var tbody = document.getElementsByTagName("tbody")[0];
+          while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+          }
+          document.getElementById("location").value = "";
+          document.getElementById("teamName").value = "";
+          var response = JSON.parse(req.responseText);
+          buildTable(response);
+        } else {
+          console.log("Error in network request: " + req.statusText);
         }
-        document.getElementById("location").value = "";
-        document.getElementById("teamName").value = "";
-        var response = JSON.parse(req.responseText);
-        buildTable(response);
+      });
+      req.send(JSON.stringify(payload)); 
+      event.preventDefault();
+    } else {
+      alert("Please enter the required fields");
+      event.preventDefault();
+    }
+  });
+}
+
+function bindUpdateBtns() {
+  let updateBtns = document.querySelectorAll("[name=Update]");
+  for (let i = 0; i < updateBtns.length; i++) {
+    updateBtns[i].addEventListener("click", function(event) {
+      let location = this.parentElement.parentElement.childNodes[0].firstChild;
+      let name = this.parentElement.parentElement.childNodes[1].firstChild;
+      if (location.hasAttribute("readOnly")) {
+        location.removeAttribute("readOnly");
+        location.className = "form-control mb-2 mr-sm-2";
+        location.style.border = "inherit";
+        name.removeAttribute("readOnly");
+        name.className = "form-control mb-2 mr-sm-2";
+        name.style.border = "inherit";
       } else {
-        console.log("Error in network request: " + req.statusText);
+        var req = new XMLHttpRequest();
+        var payload = {};
+        payload.type = "Update"
+        payload.location = location.value;
+        payload.name = name.value;
+        payload.id = this.value;
+        if (payload.location != "" && payload.name != "") {
+          req.open("POST", url, true);
+          req.setRequestHeader("Content-Type", "application/json");
+          req.addEventListener("load", function() {
+            if (req.status >= 200 && req.status < 400) {
+              var tbody = document.getElementsByTagName("tbody")[0];
+              while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+              }
+              var response = JSON.parse(req.responseText);
+              buildTable(response);
+            } else {
+              console.log("Error in network request: " + req.statusText);
+            }
+          });
+          req.send(JSON.stringify(payload)); 
+          event.preventDefault();
+        } else {
+          alert("Please enter the required fields");
+          event.preventDefault();
+        }
       }
     });
-    req.send(JSON.stringify(payload)); 
-    event.preventDefault();
-  });
+  }
 }

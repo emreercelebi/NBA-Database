@@ -54,7 +54,7 @@ app.get('/teams', function(req, res, next) {
 });
 
 app.get('/games', function(req, res, next) {
-  pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%m-%d-%y'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id",
+  pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%Y-%m-%d'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id",
   function(err, rows) {
     var context = {}
     if(err) {
@@ -143,23 +143,140 @@ app.get('/winners', function(req, res, next) {
   });
 });
 
-app.post("/teams", function(req, res, next) {
-  pool.query("INSERT INTO Teams (Location, Name) VALUES (?)", [[req.body.location, req.body.name]], function(err, result) {
-    if(err) {
-      console.log(err.stack);
-      next(err);
-      return;
-    }
-    pool.query("SELECT id, Location, Name FROM Teams", function(err, rows) {
-      var context = {};
+app.post("/players", function(req, res, next) {
+  if (req.body.type == "New") {
+    pool.query("INSERT INTO Players (FirstName, LastName, Position, TeamId) VALUES (?)", [[req.body.firstName, req.body.lastName, req.body.position, req.body.team]], function(err, result) {
       if(err) {
+        console.log(err.stack);
         next(err);
         return;
       }
-      context.rows = rows;
-      res.send(JSON.stringify(context));
+      var context = {};
+      pool.query("SELECT Players.id, FirstName, LastName, Position, CONCAT(Teams.Location, ' ', Teams.Name) AS Team FROM Players LEFT JOIN Teams ON TeamId = Teams.id",
+      function(err, rows) {
+        if(err) {
+          next(err);
+          return;
+        }
+        context.rowsP = rows;
+        pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams",
+        function(err, rows) {
+          if(err) {
+            next(err);
+            return;
+          }
+          context.rowsT = rows;
+          res.send(JSON.stringify(context));
+        });
+      });
     });
-  });
+  } else if (req.body.type == "Update") {
+    pool.query("UPDATE Players SET FirstName=?, LastName=?, Position=?, TeamId=? WHERE id=?", [req.body.firstName, req.body.lastName, req.body.position, req.body.team, req.body.id], function(err, result) {
+      if(err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      var context = {};
+      pool.query("SELECT Players.id, FirstName, LastName, Position, CONCAT(Teams.Location, ' ', Teams.Name) AS Team FROM Players LEFT JOIN Teams ON TeamId = Teams.id",
+      function(err, rows) {
+        if(err) {
+          next(err);
+          return;
+        }
+        context.rowsP = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
+  }
+}); 
+
+app.post("/games", function(req, res, next) {
+  if (req.body.type == "New") {
+    pool.query("INSERT INTO Games (Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore) VALUES (?)", 
+    [[req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore]], 
+    function(err, result) {
+      if (err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      var context = {};
+      pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%Y-%m-%d'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id", 
+      function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsG = rows;
+        pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams", 
+        function(err, rows) {
+          if (err) {
+            next(err);
+            return;
+          }
+          context.rowsT = rows;
+          res.send(JSON.stringify(context));
+        });
+      });
+    });
+  } else if (req.body.type == "Update") {
+    pool.query("UPDATE Games SET Date=?, HomeTeam=?, HomeTeamScore=?, AwayTeam=?, AwayTeamScore=? WHERE id=?", [req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore, req.body.id], function(err, result) {
+      if(err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      var context = {};
+      pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%Y-%m-%d'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id", 
+      function(err, rows) {
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rowsG = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
+  }
+});
+
+app.post("/teams", function(req, res, next) {
+  if (req.body.type == "New") {
+    pool.query("INSERT INTO Teams (Location, Name) VALUES (?)", [[req.body.location, req.body.name]], function(err, result) {
+      if(err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      pool.query("SELECT id, Location, Name FROM Teams", function(err, rows) {
+        var context = {};
+        if(err) {
+          next(err);
+          return;
+        }
+        context.rows = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
+  } else if (req.body.type == "Update") {
+      pool.query("UPDATE Teams SET Location=?, Name=? WHERE id=?", [req.body.location, req.body.name, req.body.id], function(err, result) {
+      if(err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      pool.query("SELECT id, Location, Name FROM Teams", function(err, rows) {
+        var context = {};
+        if(err) {
+          next(err);
+          return;
+        }
+        context.rows = rows;
+        res.send(JSON.stringify(context));
+       });
+    });
+  }
 }); 
 
 app.post("/accolades", function(req, res, next) {
@@ -177,65 +294,6 @@ app.post("/accolades", function(req, res, next) {
       }
       context.rows = rows;
       res.send(JSON.stringify(context));
-    });
-  });
-});
-
-app.post("/players", function(req, res, next) {
-  pool.query("INSERT INTO Players (FirstName, LastName, Position, TeamId) VALUES (?)", [[req.body.firstName, req.body.lastName, req.body.position, req.body.team]], function(err, result) {
-    if(err) {
-      console.log(err.stack);
-      next(err);
-      return;
-    }
-    var context = {};
-    pool.query("SELECT Players.id, FirstName, LastName, Position, CONCAT(Teams.Location, ' ', Teams.Name) AS Team FROM Players LEFT JOIN Teams ON TeamId = Teams.id",
-    function(err, rows) {
-      if(err) {
-        next(err);
-        return;
-      }
-      context.rowsP = rows;
-      pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams",
-      function(err, rows) {
-        if(err) {
-          next(err);
-          return;
-        }
-        context.rowsT = rows;
-        res.send(JSON.stringify(context));
-      });
-    });
-  });
-}); 
-
-app.post("/games", function(req, res, next) {
-
-  pool.query("INSERT INTO Games (Date, HomeTeam, HomeTeamScore, AwayTeam, AwayTeamScore) VALUES (?)", 
-  [[req.body.date, req.body.homeTeam, req.body.homeScore, req.body.awayTeam, req.body.awayScore]], 
-  function(err, result) {
-    if (err) {
-      console.log(err.stack);
-      next(err);
-      return;
-    }
-    var context = {};
-    pool.query("SELECT g.id, DATE_FORMAT(g.Date, '%m-%d-%y'), CONCAT(th.Location, ' ', th.Name) AS HomeTeam, g.HomeTeamScore, CONCAT(ta.Location, ' ', ta.Name) AS AwayTeam, g.AwayTeamScore FROM Games g JOIN Teams th ON g.HomeTeam = th.id JOIN Teams ta ON g.AwayTeam = ta.id", 
-    function(err, rows) {
-      if (err) {
-        next(err);
-        return;
-      }
-      context.rowsG = rows;
-      pool.query("SELECT id, CONCAT(Location, ' ', Name) AS Team FROM Teams", 
-      function(err, rows) {
-        if (err) {
-          next(err);
-          return;
-        }
-        context.rowsT = rows;
-        res.send(JSON.stringify(context));
-      });
     });
   });
 });
