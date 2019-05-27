@@ -66,7 +66,7 @@ function buildUpdateTeams(event, teamId) {
   let teamSelect = document.createElement("select");
   teamSelect.className = "custom-select mb-2 mr-sm-2";
   for (let team of teams) {
-    if (team.value != "Team...") {
+    if (team.value != "Home Team..." && team.value != "Away Team...") {
       let op = document.createElement("option");
       op.value = team.value;
       op.innerText = team.innerText;
