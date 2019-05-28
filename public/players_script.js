@@ -171,6 +171,7 @@ function bindUpdateBtns() {
       let lname = this.parentElement.parentElement.childNodes[1].firstChild;
       let pos = this.parentElement.parentElement.childNodes[2].firstChild;
       let team = this.parentElement.parentElement.childNodes[3].firstChild;
+      console.log(fname);
       if (fname.hasAttribute("readOnly")) {     
         fname.removeAttribute("readOnly");
         fname.className = "form-control mb-2 mr-sm-2";

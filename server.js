@@ -280,22 +280,42 @@ app.post("/teams", function(req, res, next) {
 }); 
 
 app.post("/accolades", function(req, res, next) {
-  pool.query("INSERT INTO Accolades (Name, Description) VALUES (?)", [[req.body.name, req.body.description]], function (err, result) {
-    if (err) {
-      console.log(err.stack);
-      next(err);
-      return;
-    }
-    pool.query("SELECT Name, Description FROM Accolades", function (err, rows) {
-      var context = {};
+  if (req.body.type == "New") {
+    pool.query("INSERT INTO Accolades (Name, Description) VALUES (?)", [[req.body.name, req.body.description]], function (err, result) {
       if (err) {
+        console.log(err.stack);
         next(err);
         return;
       }
-      context.rows = rows;
-      res.send(JSON.stringify(context));
+      pool.query("SELECT Name, Description FROM Accolades", function (err, rows) {
+        var context = {};
+        if (err) {
+          next(err);
+          return;
+        }
+        context.rows = rows;
+        res.send(JSON.stringify(context));
+      });
     });
-  });
+  }
+  else if (req.body.type == "Update") {
+    pool.query("UPDATE Accolades SET Name=?, Description=? WHERE id=?", [req.body.name, req.body.description, req.body.id], function(err, result) {
+      if (err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+      pool.query("SELECT id, Name, Description FROM Accolades", function (err, rows) {
+        var context = {};
+        if(err) {
+          next(err);
+          return;
+        }
+        context.rows = rows;
+        res.send(JSON.stringify(context));
+      });
+    });
+  }
 });
 
 app.post('/winners', function(req, res, next) {
