@@ -54,11 +54,9 @@ function bindButtons() {
   document.getElementById("addAcc").addEventListener("click", function(event) {
     var req = new XMLHttpRequest()
     var payload = {};
-
     payload.type = "New";
     payload.name = document.getElementById("accName").value;
     payload.description = document.getElementById("accDesc").value;
-
     req.open("POST", url, true);
     req.setRequestHeader("Content-Type", "application/json");
     req.addEventListener("load", function() {
@@ -83,7 +81,6 @@ function bindButtons() {
 
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://localhost:3742/accolades';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {

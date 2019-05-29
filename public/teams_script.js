@@ -16,6 +16,7 @@ function buildTable(response) {
           input.value = `${rows[prop]}`;
           input.readOnly = true;
           input.style.borderColor = "transparent";
+          input.style.width = "100%";
           td.appendChild(input);
           document.getElementsByTagName("tr")[i+1].appendChild(td);
         }

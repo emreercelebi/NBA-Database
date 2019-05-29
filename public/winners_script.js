@@ -1,9 +1,9 @@
+var url = 'http://localhost:3742/winners';
 document.addEventListener("DOMContentLoaded", initialize);
 document.addEventListener("DOMContentLoaded", bindButtons);
 
 function buildTable(response) {
   for (const [i, rows] of response.rows.entries()) {
-    console.log(rows);
     let accId = rows["AccId"];
     let playerId = rows["PlayerId"];
     let tr = document.createElement("tr");
@@ -17,23 +17,7 @@ function buildTable(response) {
         }
       }
     }
-    let updateTd = document.createElement("td");
-    let updateButton = document.createElement("button");
-    updateButton.innerHTML = "Update";
-    updateButton.id = "update" + accId + "," + playerId;
-    updateTd.appendChild(updateButton);
-
-    let deleteTd = document.createElement("td");
-    let deleteButton = document.createElement("button");
-    deleteButton.innerHTML = "Delete";
-    deleteButton.id = "delete" + accId + "," + playerId;
-    deleteTd.appendChild(deleteButton);
-
-    document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
-    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);
-
   }
-
 }
 
 function buildInputList(rows, inputList) {
@@ -48,7 +32,6 @@ function buildInputList(rows, inputList) {
 
 function initialize() {
   var req = new XMLHttpRequest();
-  var url = 'http://localhost:3742/winners';
   req.open('GET', url, true);
   req.setRequestHeader('Accept', 'application/json');
   req.addEventListener('load', function () {
@@ -58,11 +41,9 @@ function initialize() {
         tbody.removeChild(tbody.firstChild);
       }
       var response = JSON.parse(req.responseText);
-      
       buildTable(response);
       buildInputList(response.rowsA, document.getElementById("accolade"));
       buildInputList(response.rowsP, document.getElementById("player"));
-
     } else {
       console.log("Error in network request: " + req.statusText);
     }
@@ -74,7 +55,6 @@ function initialize() {
 function bindButtons() {
   document.getElementById("addWin").addEventListener("click", function(event) {
     var req = new XMLHttpRequest();
-    var url = "http://localhost:3742/winners";
     var payload = {};
 
     payload.accolade = document.getElementById("accolade").value;
@@ -91,12 +71,8 @@ function bindButtons() {
           }
           document.getElementById("accolade").value = "Accolade...";
           document.getElementById("player").value = "Player...";
-          
           var response = JSON.parse(req.responseText);
           buildTable(response);
-          buildInputList(response.rowsA, document.getElementById("accolade"));
-          buildInputList(response.rowsP, document.getElementById("player"));
-
         } else {
           console.log("Error in network request: " + req.statusText);
         }
