@@ -188,6 +188,18 @@ app.post("/players", function(req, res, next) {
         res.send(JSON.stringify(context));
       });
     });
+  } else if (req.body.type == "Search") {
+    var context = {}
+    pool.query("SELECT Players.id, FirstName, LastName, Position, CONCAT(Teams.Location, ' ', Teams.Name) AS Team FROM Players LEFT JOIN Teams ON TeamId = Teams.id WHERE FirstName LIKE ? OR LastName LIKE ? OR Position LIKE ? OR Teams.Location LIKE ? OR Teams.Name LIKE ?",
+    ["%"+req.body.searchVal+"%", "%"+req.body.searchVal+"%", "%"+req.body.searchVal+"%", "%"+req.body.searchVal+"%", "%"+req.body.searchVal+"%"],
+    function(err, rows) {
+      if(err) {
+        next(err);
+        return;
+      }
+      context.rowsP = rows;
+      res.send(JSON.stringify(context));
+    });
   }
 }); 
 
@@ -319,39 +331,59 @@ app.post("/accolades", function(req, res, next) {
 });
 
 app.post('/winners', function(req, res, next) {
-  pool.query("INSERT INTO AccoladeWinners (AccId, PlayerId) VALUES (?)", 
-  [[req.body.accolade, req.body.player]], 
-  function(err, result) {
-    if (err) {
-      console.log(err.stack);
-      next(err);
-      return;
-    }
-    var context = {};
-    pool.query("SELECT aw.AccId, aw.PlayerId, a.Name, CONCAT(p.FirstName, ' ', p.LastName) AS PlayerName FROM AccoladeWinners aw INNER JOIN Accolades a ON aw.AccId = a.id INNER JOIN Players p ON aw.PlayerId = p.id", 
-    function(err, rows) {
+  if (req.body.type == "New") {
+    pool.query("INSERT INTO AccoladeWinners (AccId, PlayerId) VALUES (?)", 
+    [[req.body.accolade, req.body.player]], 
+    function(err, result) {
       if (err) {
+        console.log(err.stack);
         next(err);
         return;
       }
-      context.rows = rows;
-      pool.query("SELECT id, Name FROM Accolades", function(err, rows) {
+      var context = {};
+      pool.query("SELECT aw.AccId, aw.PlayerId, a.Name, CONCAT(p.FirstName, ' ', p.LastName) AS PlayerName FROM AccoladeWinners aw INNER JOIN Accolades a ON aw.AccId = a.id INNER JOIN Players p ON aw.PlayerId = p.id", 
+      function(err, rows) {
         if (err) {
           next(err);
           return;
         }
-        context.rowsA = rows;
-        pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", function(err, rows) {
+        context.rows = rows;
+        pool.query("SELECT id, Name FROM Accolades", function(err, rows) {
           if (err) {
             next(err);
             return;
           }
-          context.rowsP = rows;
-          res.send(JSON.stringify(context));
+          context.rowsA = rows;
+          pool.query("SELECT id, CONCAT(FirstName, ' ', LastName) as Name FROM Players", function(err, rows) {
+            if (err) {
+              next(err);
+              return;
+            }
+            context.rowsP = rows;
+            res.send(JSON.stringify(context));
+          });
         });
       });
     });
-  });
+  } else if (req.body.type == "Delete") {
+    pool.query("DELETE FROM AccoladeWinners WHERE AccId=? AND PlayerId=?", [req.body.accolade, req.body.player], function(err, rows) {
+      if (err) {
+        console.log(err.stack);
+        next(err);
+        return;
+      }
+        var context = {};
+        pool.query("SELECT aw.AccId, aw.PlayerId, a.Name, CONCAT(p.FirstName, ' ', p.LastName) AS PlayerName FROM AccoladeWinners aw INNER JOIN Accolades a ON aw.AccId = a.id INNER JOIN Players p ON aw.PlayerId = p.id",
+        function(err, rows) {
+          if (err) {
+            next(err);
+            return;
+          }
+          context.rows = rows;
+          res.send(JSON.stringify(context));
+        });
+    });
+  }
 });
 
 app.post('/appearances', function(req, res, next) {
@@ -389,9 +421,7 @@ app.post('/appearances', function(req, res, next) {
         });
       });
     });
-    
   });
-
 });
 
 app.use(function(req,res){

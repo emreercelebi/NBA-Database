@@ -31,16 +31,7 @@ function buildTable(response) {
     updateButton.className = "btn btn-success btn-sm";
     updateTd.appendChild(updateButton);
 
-    let deleteTd = document.createElement("td");
-    let deleteButton = document.createElement("button");
-    deleteButton.name = "Delete";
-    deleteButton.innerHTML = "Delete";
-    deleteButton.value = id;
-    deleteButton.className = "btn btn-danger btn-sm";
-    deleteTd.appendChild(deleteButton);
-
     document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
-    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);   
   }
   bindUpdateBtns();
 }

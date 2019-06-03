@@ -17,7 +17,16 @@ function buildTable(response) {
         }
       }
     }
+    let deleteTd = document.createElement("td");
+    let deleteButton = document.createElement("button");
+    deleteButton.name = "Delete";
+    deleteButton.innerHTML = "Delete";
+    deleteButton.value = accId + "|" + playerId;
+    deleteButton.className = "btn btn-danger btn-sm";
+    deleteTd.appendChild(deleteButton);
+    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);
   }
+  bindDeleteBtns();
 }
 
 function buildInputList(rows, inputList) {
@@ -56,10 +65,9 @@ function bindButtons() {
   document.getElementById("addWin").addEventListener("click", function(event) {
     var req = new XMLHttpRequest();
     var payload = {};
-
+    payload.type = "New";
     payload.accolade = document.getElementById("accolade").value;
     payload.player = document.getElementById("player").value;
-
     if (payload.accolade != "Accolade..." && payload.player != "Player..."){
       req.open("POST", url, true);
       req.setRequestHeader("Content-type", "application/json");
@@ -85,4 +93,36 @@ function bindButtons() {
       event.preventDefault();
     }
   });
+}
+
+function bindDeleteBtns() {
+  let deleteBtns = document.querySelectorAll("[name=Delete]");
+  for (let i = 0; i < deleteBtns.length; i++) {
+    deleteBtns[i].addEventListener("click", function(event) {
+      let ids = this.value
+      let accId = ids.slice(0, ids.indexOf("|"));
+      let playerId = ids.slice(ids.indexOf("|")+1);
+      var req = new XMLHttpRequest();
+      var payload = {};
+      payload.type = "Delete";
+      payload.accolade = accId;
+      payload.player = playerId;
+      req.open("POST", url, true);
+      req.setRequestHeader("Content-Type", "application/json");
+      req.addEventListener("load", function() {
+        if (req.status >= 200 && req.status < 400) {
+          var tbody = document.getElementsByTagName("tbody")[0];
+          while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+          }
+          var response = JSON.parse(req.responseText);
+          buildTable(response);
+        } else {
+          console.log("Error in network request: " + req.statusText);
+        }
+      });
+      req.send(JSON.stringify(payload)); 
+      event.preventDefault();
+    });
+  }
 }

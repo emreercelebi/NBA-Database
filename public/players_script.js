@@ -35,16 +35,7 @@ function buildTable(response) {
     updateButton.className = "btn btn-success btn-sm";
     updateTd.appendChild(updateButton);
 
-    let deleteTd = document.createElement("td");
-    let deleteButton = document.createElement("button");
-    deleteButton.name = "Delete";
-    deleteButton.innerHTML = "Delete";
-    deleteButton.value = id;
-    deleteButton.className = "btn btn-danger btn-sm";
-    deleteTd.appendChild(deleteButton);
-
     document.getElementsByTagName("tr")[i + 1].appendChild(updateTd);
-    document.getElementsByTagName("tr")[i + 1].appendChild(deleteTd);
   }
    bindUpdateBtns();
 }
@@ -161,6 +152,29 @@ function bindButtons() {
       alert("Please enter the required fields");
       event.preventDefault();
     }
+  });
+  document.getElementById("searchPlayer").addEventListener("click", function(event) {
+    var req = new XMLHttpRequest();
+    var payload = {};
+    payload.type = "Search";
+    payload.searchVal = document.getElementById("searchInput").value;
+    req.open("POST", url, true);
+    req.setRequestHeader("Content-Type", "application/json");
+    req.addEventListener("load", function() {
+      if (req.status >= 200 && req.status < 400) {
+        var tbody = document.getElementsByTagName("tbody")[0];
+        while (tbody.firstChild) {
+          tbody.removeChild(tbody.firstChild);
+        }
+        document.getElementById("searchInput").value = "";
+        var response = JSON.parse(req.responseText);
+        buildTable(response);
+      } else {
+        console.log("Error in network request: " + req.statusText);
+      }
+    });
+    req.send(JSON.stringify(payload)); 
+    event.preventDefault();
   });
 }
 
