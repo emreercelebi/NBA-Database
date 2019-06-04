@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", bindButtons);
 
 function buildTable(response) {
   for (const [i, rows] of response.rowsG.entries()) {
+    console.log(rows);
     let id = rows["id"];
     let tr = document.createElement("tr");
     document.getElementsByTagName("tbody")[0].appendChild(tr);
@@ -12,7 +13,13 @@ function buildTable(response) {
         if (prop !== "id") {
           let td = document.createElement("td");
           let input = document.createElement("input");
-          input.type = "text";
+
+          if (prop == "DATE_FORMAT(g.Date, '%Y-%m-%d')") {
+            input.type = "date";
+          }
+          else {
+            input.type = "text";
+          }
           input.value = `${rows[prop]}`;
           input.readOnly = true;
           input.style.borderColor = "transparent";
