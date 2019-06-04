@@ -106,29 +106,33 @@ function bindButtons() {
     payload.awayScore = document.getElementById("awayScore").value;
     if (payload.date != "" && payload.homeTeam != "Home Team..." && payload.homeScore != "" && payload.awayTeam != "Away Team..." && payload.awayScore != "") {
       if (payload.homeTeam != payload.awayTeam) {
-        req.open("POST", url, true);
-        req.setRequestHeader("Content-type", "application/json");
-        req.addEventListener("load", function() {
-          if (req.status >= 200 && req.status < 400) {
-            var tbody = document.getElementsByTagName("tbody")[0];
-            while (tbody.firstChild) {
-              tbody.removeChild(tbody.firstChild);
+        if (payload.homeScore > 0 && payload.awayScore > 0) {
+          req.open("POST", url, true);
+          req.setRequestHeader("Content-type", "application/json");
+          req.addEventListener("load", function() {
+            if (req.status >= 200 && req.status < 400) {
+              var tbody = document.getElementsByTagName("tbody")[0];
+              while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+              }
+              document.getElementById("date").value = "";
+              document.getElementById("homeTeam").value = "Home Team...";
+              document.getElementById("homeScore").value = "";
+              document.getElementById("awayTeam").value = "Away Team...";
+              document.getElementById("awayScore").value = "";
+              var response = JSON.parse(req.responseText);
+              buildTable(response);
+            } else {
+              console.log("Error in network request: " + req.statusText);
             }
-            document.getElementById("date").value = "";
-            document.getElementById("homeTeam").value = "Home Team...";
-            document.getElementById("homeScore").value = "";
-            document.getElementById("awayTeam").value = "Away Team...";
-            document.getElementById("awayScore").value = "";
-            var response = JSON.parse(req.responseText);
-            buildTable(response);
-          } else {
-            console.log("Error in network request: " + req.statusText);
-          }
-        });
-        req.send(JSON.stringify(payload));
-        event.preventDefault();
-      }
-      else {
+          });
+          req.send(JSON.stringify(payload));
+          event.preventDefault();
+        } else {
+          alert("Error: Scores cannot be negative");
+          event.preventDefault();
+        }
+      } else {
         alert("Error: Home and Away teams cannot be the same team");
         event.preventDefault();
       }

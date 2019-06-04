@@ -70,24 +70,29 @@ function bindButtons() {
     payload.game = document.getElementById("game").value;
     payload.player = document.getElementById("player").value;
     payload.points = document.getElementById("ptsScored").value;
-    req.open("POST", url, true);
-    req.setRequestHeader("Content-type", "application/json");
-    req.addEventListener("load", function() {
-      if (req.status >= 200 && req.status < 400) {
-        var tbody = document.getElementsByTagName("tbody")[0];
-        while (tbody.firstChild) {
-          tbody.removeChild(tbody.firstChild);
+    if (payload.points > 0) {
+      req.open("POST", url, true);
+      req.setRequestHeader("Content-type", "application/json");
+      req.addEventListener("load", function() {
+        if (req.status >= 200 && req.status < 400) {
+          var tbody = document.getElementsByTagName("tbody")[0];
+          while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+          }
+          document.getElementById("game").value = "Game...";
+          document.getElementById("player").value = "Player...";
+          document.getElementById("ptsScored").value = "";
+          var response = JSON.parse(req.responseText);
+          buildTable(response);
+        } else {
+          console.log("Error in network request: " + req.statusText);
         }
-        document.getElementById("game").value = "Game...";
-        document.getElementById("player").value = "Player...";
-        document.getElementById("ptsScored").value = "";
-        var response = JSON.parse(req.responseText);
-        buildTable(response);
-      } else {
-        console.log("Error in network request: " + req.statusText);
-      }
-    });
-    req.send(JSON.stringify(payload));
-    event.preventDefault();
+      });
+      req.send(JSON.stringify(payload));
+      event.preventDefault();
+    } else {
+      alert("Error: Points cannot be negative");
+      event.preventDefault();
+    }
   });
 }
